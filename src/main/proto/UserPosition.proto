@@ -1,0 +1,27 @@
+syntax = "proto3";
+package com.qiding.direct;
+message DeviceInfo{
+    string time=1;
+    string UUID=2;
+    sint32 Major=3;
+    sint32 Minor=4;
+    sint32 rssi=5;
+    string name=6;
+    string address=7;
+    sint32 txpower=8;
+}
+
+message UserPosition{
+  float positionX=1;
+  float positionY=2;
+  float positionZ=3;
+}
+
+
+message DeviceInfoList{
+  repeated DeviceInfo deviceInfo=1;
+}
+
+message UserPositionList{
+  repeated UserPosition postion=1;
+}
