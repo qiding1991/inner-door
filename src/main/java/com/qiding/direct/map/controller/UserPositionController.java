@@ -1,5 +1,6 @@
 package com.qiding.direct.map.controller;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mongodb.client.model.geojson.Point;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @CrossOrigin
 @Api(value="室内导航api")
@@ -92,6 +94,10 @@ public class UserPositionController {
 
 
 
+
+
+
+
     @ApiOperation(value = "根据楼层获取",httpMethod = "GET")
     @GetMapping("getByFloor/{floor}")
     public CommonResult getByFloor(
@@ -135,11 +141,12 @@ public class UserPositionController {
         return CommonResult.builder().code(200).message("success").data(floorResult).build();
     }
 
-
-
-
-
-
-
-
+	@ApiOperation(value = "获取导航",httpMethod = "GET")
+    @GetMapping("direction")
+	public CommonResult direction(){
+		 List<List<Double>> direction=new ArrayList<>();
+		 direction.add(ImmutableList.of(Double.valueOf(308242561.9612449),Double.valueOf(506914096.89033026)).asList());
+		 direction.add(ImmutableList.of(Double.valueOf(308242561.9612449),Double.valueOf(506961415.9401813)).asList());
+		 return CommonResult.builder().code(200).message("success").data(direction).build();
+	}
 }
