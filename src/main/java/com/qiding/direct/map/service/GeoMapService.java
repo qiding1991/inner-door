@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.qiding.direct.map.param.Geo;
 import com.qiding.direct.map.param.InnerMapInfo;
+import lombok.extern.log4j.Log4j2;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+@Log4j2
 @Service
 public class GeoMapService {
     @Autowired
@@ -42,6 +44,7 @@ public class GeoMapService {
                 .addCriteria(Criteria.where("geometry").is(mapInfo.getGeometry()));
         List<InnerMapInfo> infoList=new ArrayList<>();
         infoList.addAll(mongoTemplate.find(query,mapInfo.getClass(),"innerMapInfo"));
+        log.info("返回值:{}",infoList);
         return infoList;
     }
 

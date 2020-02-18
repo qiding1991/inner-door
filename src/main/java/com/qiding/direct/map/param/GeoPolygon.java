@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 public class GeoPolygon extends Geo {
@@ -28,6 +29,18 @@ public class GeoPolygon extends Geo {
 
         private String type;
         private List<List<List<Double>>> coordinates;
+    }
 
+    @Override
+    public void changePrecision() {
+        this.geometry.coordinates=
+        this.geometry.coordinates.parallelStream()
+                .map(
+                     level2->level2.parallelStream().map(
+                             level3->level3.parallelStream().map(
+                                     item->changePrecision(item)
+                             ).collect(Collectors.toList())
+                     ).collect(Collectors.toList())
+                ).collect(Collectors.toList());
     }
 }

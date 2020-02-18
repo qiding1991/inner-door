@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 public class GeoLine extends Geo {
@@ -26,5 +27,13 @@ public class GeoLine extends Geo {
 
         private String type;
         private List<List<Double>> coordinates;
+    }
+
+    @Override
+    public void changePrecision() {
+        this.geometry.coordinates= this.geometry.coordinates
+                .parallelStream()
+                .map(list-> list.parallelStream().map(x->changePrecision(x)).collect(Collectors.toList()))
+                .collect(Collectors.toList());
     }
 }

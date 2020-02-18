@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 public class GeoPoint extends Geo {
@@ -18,6 +19,11 @@ public class GeoPoint extends Geo {
          */
         private String type;
         private List<Double> coordinates;
+    }
 
+    @Override
+    public void changePrecision() {
+        this.geometry.coordinates=this.geometry.coordinates.parallelStream()
+                .map(x->changePrecision(x)).collect(Collectors.toList());
     }
 }
