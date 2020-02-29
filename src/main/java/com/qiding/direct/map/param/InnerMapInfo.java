@@ -7,12 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class InnerMapInfo<T extends Geo> {
-    @Id
-    String id;
-    String type;
-    String floor;
-    String fileName;
-    String geometry;
+public class InnerMapInfo<T extends Geo>  extends MapBaseInfo{
     List<T> features=new ArrayList<>();
 }

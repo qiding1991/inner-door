@@ -5,8 +5,10 @@ import com.qiding.direct.map.param.GeoLine;
 import com.qiding.direct.map.param.GeoPoint;
 import com.qiding.direct.map.param.GeoPolygon;
 import lombok.extern.log4j.Log4j2;
+import org.apache.tomcat.util.security.MD5Encoder;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.DigestUtils;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -32,6 +34,30 @@ class QidinngInnerMapApplicationTests {
 		System.out.println("1111");
 	}
 
+	@Test
+	public void md5(){
+		String aaa= DigestUtils.md5DigestAsHex("aaaaa".getBytes());
+		System.out.println("111");
+
+
+		Map<String,String> map=new HashMap<>();
+		System.out.println(map.putIfAbsent("aa","bb"));
+		System.out.println(map.putIfAbsent("aa","bb"));
+
+		System.out.println("aaa");
+	}
+
+
+   @Test
+   public void testOption(){
+		String a=null;
+		Optional.ofNullable(a).orElse("1111");
+
+		String b="111";
+
+
+
+   }
 
 
 	@Test

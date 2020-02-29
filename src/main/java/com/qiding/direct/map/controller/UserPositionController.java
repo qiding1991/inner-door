@@ -1,36 +1,28 @@
 package com.qiding.direct.map.controller;
 
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.mongodb.client.model.geojson.Point;
 import com.qiding.direct.map.common.Geometry;
 import com.qiding.direct.map.param.*;
-import com.qiding.direct.map.service.GeoMapService;
-import com.qiding.direct.map.service.PositionService;
+import com.qiding.direct.map.service.*;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
+@Log4j2
 @CrossOrigin
-@Api(value = "室内导航api")
+@Api(tags = "室内导航api")
 @RestController
 public class UserPositionController {
 
-    private Gson gson = new Gson();
 
     @Autowired
     PositionService positionService;
@@ -38,49 +30,32 @@ public class UserPositionController {
     @Autowired
     GeoMapService geoMapService;
 
-    SoftReference<Map<String, List<InnerMapInfo>>> reference = new SoftReference<Map<String, List<InnerMapInfo>>>(new HashMap<>());
-    SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new HashMap<>());
+    @Autowired
+    TypeService typeService;
+
+    @Autowired
+    CacheService cacheService;
+
+    @Autowired
+    GeoPropertiesService propertiesService;
+
+
+
+
+//  SoftReference<Map<String, List<InnerMapInfo>>> reference = new SoftReference<Map<String, List<InnerMapInfo>>>(new HashMap<>());
+   // SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new HashMap<>());
 
 
     @ApiOperation(value = "获取坐标", httpMethod = "POST")
     @PostMapping("position")
     public CommonResult position(@RequestBody QueryPositionIn position) {
-        List<MapPosition> infoList = positionService
-                .findPosition(position.getPositionList().stream().toArray(DeviceInfo[]::new));
+        log.info("获取定位的请求参数，请求参数：{}",position);
+        List<MapPosition> infoList = positionService.findPosition(position.getPositionList().stream().toArray(DeviceInfo[]::new));
         return CommonResult.builder().code(200).message("success").data(infoList.get(0)).build();
     }
 
 
-    @ApiOperation(value = "上传地图数据", httpMethod = "POST")
-    @PostMapping("upload/{geometry}/{floor}/{filename}")
-    public CommonResult uploadMapInfo(@ApiParam(value = "文件") @RequestParam(value = "geofile") MultipartFile geofile,
-                                      @ApiParam(value = "楼层") @PathVariable(value = "floor") String floor,
-                                      @ApiParam(value = "文件类型 Point, LineString, Polygon") @PathVariable(value = "geometry") String geometry,
-                                      @ApiParam(value = "文件名称") @PathVariable(value = "filename") String filename) {
-        try {
-            String fileInfo = new String(geofile.getBytes(), "utf-8");
-            InnerMapInfo<Geo> mapInfo;
-            if (Geometry.Point.getString().equals(geometry)) {
-                mapInfo = gson.fromJson(fileInfo, new TypeToken<InnerMapInfo<GeoPoint>>() {
-                }.getType());
-            } else if (Geometry.LineString.getString().equals(geometry)) {
-                mapInfo = gson.fromJson(fileInfo, new TypeToken<InnerMapInfo<GeoLine>>() {
-                }.getType());
-            } else {
-                mapInfo = gson.fromJson(fileInfo, new TypeToken<InnerMapInfo<GeoPolygon>>() {
-                }.getType());
-            }
-            mapInfo.setGeometry(geometry);
-            mapInfo.setFileName(filename);
-            mapInfo.setFloor(floor);
-            mapInfo.getFeatures().parallelStream().forEach(geo -> geo.getProperties().put("uuid", UUID.randomUUID().toString()));
-            geoMapService.addMapData(mapInfo);
-            return CommonResult.builder().code(200).message("success").build();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return CommonResult.builder().code(400).message("格式不对").build();
-        }
-    }
+
 
     @ApiOperation(value = "根据自定义名称获取", httpMethod = "GET")
     @GetMapping("get/{geometry}/{filename}")
@@ -106,9 +81,7 @@ public class UserPositionController {
             @ApiParam(value = "根据楼层获取") @PathVariable(value = "floor") String floor,
             @ApiParam(value = "文件类型 point，line，Polygon,默认为全部")
             @RequestParam(value = "geometry", required = false) String geometry,
-            HttpServletResponse response
-
-    ) {
+            HttpServletResponse response) {
         InnerMapInfo innerMapInfo = new InnerMapInfo();
         innerMapInfo.setFloor(floor);
         List<InnerMapInfo> infoList = new ArrayList<>();
@@ -133,57 +106,59 @@ public class UserPositionController {
             infoList.add(new GeoPolygonMap());
         }
 
-        infoList.parallelStream().forEach(mapInfo -> {
-            String cacheKey = mapInfo.getGeometry()+floor;
-            referenceGeo.get().computeIfAbsent(cacheKey, (key) -> {
-                List<Geo> geoList = new ArrayList<>();
-                List<InnerMapInfo> mapInfoList = geoMapService.getMapData(mapInfo, floor);
-                mapInfoList.forEach(detail -> {
-                    List<Geo> features = detail.getFeatures();
-                    if (CollectionUtils.isEmpty(features)) {
-                        return;
-                    }
-                    features.forEach(geo -> {
-                        geo.changePrecision();
-                    });
-                    geoList.addAll(features);
-                });
-                return geoList;
-            });
-
-            List<Geo> features = referenceGeo.get().get(cacheKey);
-            if (CollectionUtils.isEmpty(features)) {
-                return;
-            }
-            floorResult.getFeatures().addAll(features);
-
-//                referenceGeo.get().get(geoMetry).forEach(features -> {
-//                    floorResult.getFeatures().addAll(features);
+//        infoList.stream().forEach(mapInfo -> {
+//            String cacheKey = mapInfo.getGeometry()+floor;
+//            referenceGeo.get().computeIfAbsent(cacheKey, (key) -> {
+//                List<Geo> geoList = new ArrayList<>();
+//                List<InnerMapInfo> mapInfoList = geoMapService.getMapData(mapInfo, floor);
+//                mapInfoList.forEach(detail -> {
+//                    List<Geo> features = detail.getFeatures();
+//                    if (CollectionUtils.isEmpty(features)) {
+//                        return;
+//                    }
+//                    features.forEach(geo -> {
+//                        geo.changePrecision();
+//                        geo.changeProperties(propertiesService);
+//                    });
+//                    geoList.addAll(features);
 //                });
-
-
-//            reference.get().computeIfAbsent(geoMetry, (key) -> geoMapService.getMapData(mapInfo, floor));
-//            reference.get().get(geoMetry).forEach(detail -> {
-//                List<Geo> features = detail.getFeatures();
-//                if (CollectionUtils.isEmpty(features)) {
-//                    return;
-//                }
-//                features.forEach(geo -> {
-//                    geo.changePrecision();
-//                });
-//                floorResult.getFeatures().addAll(features);
+//                return geoList;
 //            });
-
-
-//            geoMapService.getMapData(mapInfo,floor).forEach(detail->{
-//                List<Geo> features=detail.getFeatures();
-//                if(CollectionUtils.isEmpty(features)){
-//                    return;
-//                }
-//                floorResult.getFeatures().addAll(features);
-//            });
-        });
-        response.setDateHeader("expires", System.currentTimeMillis() + 1000 * 6000);
+//
+//            List<Geo> features = referenceGeo.get().get(cacheKey);
+//            if (CollectionUtils.isEmpty(features)) {
+//                return;
+//            }
+//            floorResult.getFeatures().addAll(features);
+//
+////                referenceGeo.get().get(geoMetry).forEach(features -> {
+////                    floorResult.getFeatures().addAll(features);
+////                });
+//
+//
+////            reference.get().computeIfAbsent(geoMetry, (key) -> geoMapService.getMapData(mapInfo, floor));
+////            reference.get().get(geoMetry).forEach(detail -> {
+////                List<Geo> features = detail.getFeatures();
+////                if (CollectionUtils.isEmpty(features)) {
+////                    return;
+////                }
+////                features.forEach(geo -> {
+////                    geo.changePrecision();
+////                });
+////                floorResult.getFeatures().addAll(features);
+////            });
+//
+//
+////            geoMapService.getMapData(mapInfo,floor).forEach(detail->{
+////                List<Geo> features=detail.getFeatures();
+////                if(CollectionUtils.isEmpty(features)){
+////                    return;
+////                }
+////                floorResult.getFeatures().addAll(features);
+////            });
+//        });
+        response.setDateHeader("expires", System.currentTimeMillis() + 1 * 6000);
+        cacheService.updateDataCache(infoList,floorResult,propertiesService,geoMapService);
         return CommonResult.builder().code(200).message("success").data(floorResult).build();
     }
 
@@ -195,4 +170,21 @@ public class UserPositionController {
         direction.add(ImmutableList.of(Double.valueOf(308242561.9612449), Double.valueOf(506961415.9401813)).asList());
         return CommonResult.builder().code(200).message("success").data(direction).build();
     }
+
+    @ApiOperation(value = "获取颜色配置信息", httpMethod = "GET")
+    @GetMapping("typeList")
+    public CommonResult typelist(){
+       List<TypeInfo> infoList=typeService.list();
+        return CommonResult.builder().code(200).message("success").data(infoList).build();
+    }
+
+
+    @ApiOperation(value = "获取当前数据的版本", httpMethod = "GET")
+    @GetMapping("refresh/currentVersion")
+    public CommonResult refresh() {
+              Integer verison= cacheService.currentVersion();
+        return CommonResult.builder().code(200).message("success").data(verison).build();
+    }
+
 }
+

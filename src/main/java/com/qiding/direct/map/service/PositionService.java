@@ -8,12 +8,16 @@ import com.qiding.direct.map.param.DeviceInfo;
 import com.qiding.direct.map.param.MapPosition;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Log4j2
 @Service
 public class PositionService {
 
@@ -28,6 +32,7 @@ public class PositionService {
 
 	public List<MapPosition> findPosition(DeviceInfo... infos) {
 		try {
+			log.info("请求数据列表:{}",infos);
 			UserPositionOuterClass.DeviceInfoList.Builder builder = UserPositionOuterClass.DeviceInfoList.newBuilder();
 			Stream.of(infos).forEach(info -> builder.addDeviceInfo(userPosition(info)));
 			UserPositionOuterClass.DeviceInfoList deviceInfoList = builder.build();
@@ -37,11 +42,13 @@ public class PositionService {
 				.collect(Collectors.toList());
 		} catch (Exception e) {
 			e.printStackTrace();
+			log.error("获取定位数据失败",e);
 			return ImmutableList.of(MapPosition.builder().postionX("1.0f").postionY("1.0f").postionZ("1.0f").build());
 		}
 	}
 
 	/**
+	 * string time =0
 	 * string version=1;
 	 * string UUID=2;
 	 * string Major=3;
@@ -56,7 +63,7 @@ public class PositionService {
 	 */
 	public UserPositionOuterClass.DeviceInfo userPosition(DeviceInfo deviceInfo) {
 		UserPositionOuterClass.DeviceInfo.Builder builder = UserPositionOuterClass.DeviceInfo.newBuilder();
-		builder.setTime(deviceInfo.getTime());
+		builder.setTime(Optional.ofNullable(deviceInfo.getTime()).orElse(System.currentTimeMillis()+""));
 		builder.setUUID(deviceInfo.getUuid());
 		builder.setMajor(deviceInfo.getMajor());
 		builder.setMinor(deviceInfo.getMinor());
