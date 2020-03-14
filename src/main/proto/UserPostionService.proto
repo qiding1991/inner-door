@@ -4,6 +4,7 @@ import "UserPosition.proto";
 
 service UserPositionService{
   rpc userPosition(DeviceInfoList) returns(UserPositionList){};
+  rpc userDirection(Direction) returns(UserPositionList){};
 }
 
 

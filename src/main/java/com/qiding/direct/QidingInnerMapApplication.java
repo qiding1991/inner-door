@@ -8,6 +8,7 @@ import org.springframework.boot.context.ApplicationPidFileWriter;
 public class QidingInnerMapApplication {
 
 	public static void main(String[] args) {
+		System.setProperty("es.set.netty.runtime.available.processors", "false");
 		SpringApplication application=new SpringApplication();
 		application.addListeners(new ApplicationPidFileWriter("qiding-inner-map.pid"));
 		application.run(QidingInnerMapApplication.class, args);

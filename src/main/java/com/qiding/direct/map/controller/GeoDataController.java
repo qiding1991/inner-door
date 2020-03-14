@@ -8,6 +8,7 @@ import com.qiding.direct.map.param.*;
 import com.qiding.direct.map.service.CacheService;
 import com.qiding.direct.map.service.GeoMapService;
 import com.qiding.direct.map.service.GeoPropertiesService;
+import com.qiding.direct.map.service.SearchService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -35,6 +36,11 @@ public class GeoDataController {
 
     @Autowired
     CacheService cacheService;
+
+
+    @Autowired
+    SearchService searchService;
+
 
     private Gson gson = new Gson();
 
@@ -75,6 +81,7 @@ public class GeoDataController {
             cacheService.incrVersion();
             //删除所有的缓存
             cacheService.cleanCache();
+            searchService.refreshIndex();
             return CommonResult.builder().code(200).message("success").build();
         } catch (IOException e) {
             e.printStackTrace();

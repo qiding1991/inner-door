@@ -60,11 +60,23 @@ public class CacheService {
                                 GeoPropertiesService propertiesService, GeoMapService geoMapService) {
         String floor = floorResult.getFloor();
 
+        log.info("updateDataCache param:infoList={},floorResult={}",infoList,floorResult);
+
+
         infoList.stream().forEach(mapInfo -> {
             String cacheKey = mapInfo.getGeometry() + floor;
+            log.info("referenceGeo, referenceGeo={},cacheData={}",referenceGeo,referenceGeo.get());
+
             referenceGeo.get().computeIfAbsent(cacheKey, (key) -> {
                 List<Geo> geoList = new ArrayList<>();
                 List<InnerMapInfo> mapInfoList = geoMapService.getMapData(mapInfo, floor);
+
+                log.info("mapInfoList={}",mapInfoList);
+                if(CollectionUtils.isEmpty(mapInfoList)){
+                    log.info("mapInfo={},floor={},mapInfoList={}",mapInfo,floor,mapInfoList);
+                    return new ArrayList<>();
+                }
+
                 mapInfoList.forEach(detail -> {
                     List<Geo> features = detail.getFeatures();
                     if (CollectionUtils.isEmpty(features)) {

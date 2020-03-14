@@ -1,6 +1,9 @@
 package com.qiding.direct.map.controller;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.gson.Gson;
 import com.qiding.direct.map.common.Geometry;
 import com.qiding.direct.map.param.*;
 import com.qiding.direct.map.service.*;
@@ -8,14 +11,18 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.extern.log4j.Log4j2;
+import net.bytebuddy.asm.Advice;
+import org.elasticsearch.action.search.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Log4j2
 @CrossOrigin
@@ -39,22 +46,26 @@ public class UserPositionController {
     @Autowired
     GeoPropertiesService propertiesService;
 
+    @Autowired
+    SearchService searchService;
 
+    private Gson gson=new Gson();
 
 
 //  SoftReference<Map<String, List<InnerMapInfo>>> reference = new SoftReference<Map<String, List<InnerMapInfo>>>(new HashMap<>());
-   // SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new HashMap<>());
+    // SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new HashMap<>());
 
 
     @ApiOperation(value = "获取坐标", httpMethod = "POST")
     @PostMapping("position")
     public CommonResult position(@RequestBody QueryPositionIn position) {
-        log.info("获取定位的请求参数，请求参数：{}",position);
-        List<MapPosition> infoList = positionService.findPosition(position.getPositionList().stream().toArray(DeviceInfo[]::new));
+        log.info("获取定位的请求参数，请求参数：{}", position);
+        List<MapPositionResult> infoList =
+                positionService.findPosition(position.getPositionList().stream().toArray(DeviceInfo[]::new))
+                        .stream().map(mapPosition ->gson.fromJson(gson.toJson(mapPosition),MapPositionResult.class))
+                        .collect(Collectors.toList());
         return CommonResult.builder().code(200).message("success").data(infoList.get(0)).build();
     }
-
-
 
 
     @ApiOperation(value = "根据自定义名称获取", httpMethod = "GET")
@@ -95,8 +106,8 @@ public class UserPositionController {
 
         if (StringUtils.isEmpty(geometry)) {
             floorResult.setGeometry("complex");
-			infoList.add(new GeoPolygonMap());
-			infoList.add(new GeoLineMap());
+            infoList.add(new GeoPolygonMap());
+            infoList.add(new GeoLineMap());
             infoList.add(new GeoPointMap());
         } else if (Geometry.Point.getString().equals(geometry)) {
             infoList.add(new GeoPointMap());
@@ -158,23 +169,31 @@ public class UserPositionController {
 ////            });
 //        });
         response.setDateHeader("expires", System.currentTimeMillis() + 1 * 6000);
-        cacheService.updateDataCache(infoList,floorResult,propertiesService,geoMapService);
+        cacheService.updateDataCache(infoList, floorResult, propertiesService, geoMapService);
         return CommonResult.builder().code(200).message("success").data(floorResult).build();
     }
 
-    @ApiOperation(value = "获取导航", httpMethod = "GET")
-    @GetMapping("direction")
-    public CommonResult direction() {
-        List<List<Double>> direction = new ArrayList<>();
-        direction.add(ImmutableList.of(Double.valueOf(308242561.9612449), Double.valueOf(506914096.89033026)).asList());
-        direction.add(ImmutableList.of(Double.valueOf(308242561.9612449), Double.valueOf(506961415.9401813)).asList());
+    @ApiOperation(value = "获取导航", httpMethod = "POST")
+    @PostMapping("direction")
+    public CommonResult direction(@RequestBody UserDirection userDirection) {
+
+//        direction.add(ImmutableList.of(Double.valueOf(308242561.9612449), Double.valueOf(506914096.89033026)).asList());
+//        direction.add(ImmutableList.of(Double.valueOf(308242561.9612449), Double.valueOf(506961415.9401813)).asList());
+
+       log.info("请求参数={}",userDirection);
+
+        List<MapPosition> result = positionService.findDirection(userDirection.getStartPosition(), userDirection.getEndPosition());
+        List<List<Double>> direction=result.stream().map(mapPosition ->
+                ImmutableList.of(Double.valueOf(mapPosition.getPositionX()),
+                Double.valueOf(mapPosition.getPositionY()),
+                        Double.valueOf(mapPosition.getPositionZ())).asList()).collect(Collectors.toList());
         return CommonResult.builder().code(200).message("success").data(direction).build();
     }
 
     @ApiOperation(value = "获取颜色配置信息", httpMethod = "GET")
     @GetMapping("typeList")
-    public CommonResult typelist(){
-       List<TypeInfo> infoList=typeService.list();
+    public CommonResult typelist() {
+        List<TypeInfo> infoList = typeService.list();
         return CommonResult.builder().code(200).message("success").data(infoList).build();
     }
 
@@ -182,9 +201,24 @@ public class UserPositionController {
     @ApiOperation(value = "获取当前数据的版本", httpMethod = "GET")
     @GetMapping("refresh/currentVersion")
     public CommonResult refresh() {
-              Integer verison= cacheService.currentVersion();
+        Integer verison = cacheService.currentVersion();
         return CommonResult.builder().code(200).message("success").data(verison).build();
     }
+
+    @ApiOperation(value = "搜索", httpMethod = "GET")
+    @GetMapping("search")
+    public CommonResult search(@RequestParam(value = "name") String name) {
+        return CommonResult.builder().code(200).message("success").data(searchService.findIndex(name)).build();
+    }
+
+
+    @ApiOperation(value = "楼层映射关系", httpMethod = "GET")
+    @GetMapping("floor/mapping")
+    public CommonResult floorMapping() {
+        ImmutableMap<String, Integer> floorMap = ImmutableMap.of("B2", -2, "B3", -3);
+        return CommonResult.builder().code(200).message("success").data(floorMap).build();
+    }
+
 
 }
 

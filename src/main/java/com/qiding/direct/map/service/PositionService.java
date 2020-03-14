@@ -12,6 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,40 +38,72 @@ public class PositionService {
 			Stream.of(infos).forEach(info -> builder.addDeviceInfo(userPosition(info)));
 			UserPositionOuterClass.DeviceInfoList deviceInfoList = builder.build();
 			UserPositionOuterClass.UserPositionList userPositionList = grpcClient.userPosition(deviceInfoList);
-			return userPositionList.getPostionList().parallelStream()
+			return userPositionList.getPositionList().parallelStream()
 				.map(position -> new MapPosition(String.valueOf(position.getPositionX()), String.valueOf(position.getPositionY()),String.valueOf(position.getPositionZ())))
 				.collect(Collectors.toList());
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("获取定位数据失败",e);
-			return ImmutableList.of(MapPosition.builder().postionX("1.0f").postionY("1.0f").postionZ("1.0f").build());
+			return ImmutableList.of(MapPosition.builder().positionX("1.0").positionY("1.0").positionZ("1.0").build());
 		}
 	}
 
+
+
+	public List<MapPosition> findDirection(MapPosition startPosition,MapPosition endPosition){
+
+
+		try {
+		UserPositionOuterClass.Direction.Builder builder = UserPositionOuterClass.Direction.newBuilder();
+
+		UserPositionOuterClass.UserPosition.Builder positionBuilder=UserPositionOuterClass.UserPosition.newBuilder();
+		positionBuilder.setPositionX(startPosition.getPositionX());
+		positionBuilder.setPositionY(startPosition.getPositionY());
+		positionBuilder.setPositionZ(startPosition.getPositionZ());
+		UserPositionOuterClass.UserPosition start= positionBuilder.build();
+
+		positionBuilder.setPositionX(endPosition.getPositionX());
+		positionBuilder.setPositionY(endPosition.getPositionY());
+		positionBuilder.setPositionZ(endPosition.getPositionZ());
+		UserPositionOuterClass.UserPosition end= positionBuilder.build();
+
+		builder.setStartPosition(start);
+		builder.setEndPosition(end);
+
+		log.info("start:{},\nend:{}",start,end);
+
+		UserPositionOuterClass.UserPositionList pointList=grpcClient.userDirection(builder.build());
+
+		log.info("start:{},\nend:{},\nresult:{}",start,end,pointList);
+
+		return pointList.getPositionList().stream()
+				.map(position -> new MapPosition(String.valueOf(position.getPositionX()), String.valueOf(position.getPositionY()),String.valueOf(position.getPositionZ())))
+				.collect(Collectors.toList());
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("获取导航失败",e);
+			return ImmutableList.of(MapPosition.builder().positionX("0.0").positionY("0.0").positionZ("0.0").build());
+		}
+	}
+
+
+
+
+
+
 	/**
-	 * string time =0
-	 * string version=1;
-	 * string UUID=2;
-	 * string Major=3;
-	 * string Minor=4;
-	 * string rssi=5;
-	 * string name=6;
-	 * string address=7;
-	 * string txpower=8;
+	 * string Major=1;
+	 * string Minor=2;
+	 * string rssi=3;
 	 *
 	 * @param deviceInfo
 	 * @return
 	 */
 	public UserPositionOuterClass.DeviceInfo userPosition(DeviceInfo deviceInfo) {
 		UserPositionOuterClass.DeviceInfo.Builder builder = UserPositionOuterClass.DeviceInfo.newBuilder();
-		builder.setTime(Optional.ofNullable(deviceInfo.getTime()).orElse(System.currentTimeMillis()+""));
-		builder.setUUID(deviceInfo.getUuid());
 		builder.setMajor(deviceInfo.getMajor());
 		builder.setMinor(deviceInfo.getMinor());
 		builder.setRssi(deviceInfo.getRssi());
-		builder.setName(deviceInfo.getName());
-		builder.setAddress(deviceInfo.getAddress());
-		builder.setTxpower(deviceInfo.getTxpower());
 		return builder.build();
 	}
 

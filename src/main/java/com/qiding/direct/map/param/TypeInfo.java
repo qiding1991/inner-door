@@ -10,5 +10,5 @@ public class TypeInfo {
     @Id
     private String typeId;
     private String typeName;
-    private String typeData;
+    private Map<String,Object> typeData;
 }

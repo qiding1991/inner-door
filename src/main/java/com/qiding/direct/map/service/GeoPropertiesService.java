@@ -22,6 +22,14 @@ public class GeoPropertiesService {
         return mongoTemplate.find(query,GeoProperties.class);
     }
 
+
+    public Long propertiesCount(){
+        Query query=new Query();
+        return mongoTemplate.count(query,GeoProperties.class);
+    }
+
+
+
     public List<GeoProperties> detail(List<String> uuids){
         Query query= Query.query(Criteria.where("uuid").in(uuids));
         return mongoTemplate.find(query,GeoProperties.class);

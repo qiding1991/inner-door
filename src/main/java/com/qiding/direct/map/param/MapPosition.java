@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MapPosition {
-	private String postionX;
-	private String postionY;
-	private String postionZ;
+	private String positionX;
+	private String positionY;
+	private String positionZ;
 }
