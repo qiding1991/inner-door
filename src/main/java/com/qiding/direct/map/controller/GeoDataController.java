@@ -117,6 +117,7 @@ public class GeoDataController {
     public  void addProperties(Geo geo,String floor,String fileName){
         String uuid=UUID.randomUUID().toString();
         geo.getProperties().put("uuid",uuid);
+        geo.getProperties().put("floor",floor);
         GeoProperties geoProperties=    GeoProperties.builder().fileName(fileName)
                 .floor(floor)
                 .uuid(uuid)
