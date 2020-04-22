@@ -17,6 +17,7 @@ public  abstract class Geo {
 
     public void changeProperties(GeoPropertiesService propertiesService){
          GeoProperties geoProperties= propertiesService.detail(properties.get("uuid"));
+         geoProperties.getProperties().put("floor",geoProperties.getFloor());
          this.properties.putAll(geoProperties.getProperties());
     }
 

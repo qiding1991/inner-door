@@ -102,9 +102,16 @@ public class SearchService {
             client.admin().indices().prepareUpdateSettings(indexName).setSettings(ImmutableMap.of("max_result_window",Integer.MAX_VALUE-1)).get();
             initES(Geometry.Polygon, GeoPolygonMap.class);
         }
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("properties.name", name);
+        QueryBuilder queryBuilder = QueryBuilders.wildcardQuery("properties.name", "*"+name.toLowerCase()+"*");
         SearchResponse response = client.prepareSearch(this.indexName).setQuery(queryBuilder).setFrom(0).setSize(Integer.MAX_VALUE-1).get();
         SearchHits hits = response.getHits();
+
+        if(hits.getHits().length==0){
+            queryBuilder = QueryBuilders.matchQuery("properties.name", name);
+            response = client.prepareSearch(this.indexName).setQuery(queryBuilder).setFrom(0).setSize(Integer.MAX_VALUE-1).get();
+            hits = response.getHits();
+        }
+
         List<GeoPolygon> infoList = new ArrayList<>(Long.valueOf(hits.getHits().length).intValue());
         Iterator<SearchHit> iterator = hits.iterator();
         while (iterator.hasNext()) {
