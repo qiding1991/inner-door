@@ -55,4 +55,28 @@ public class TypeController {
 
 
 
+    @ApiOperation(value = "更新分类", httpMethod = "POST")
+    @PostMapping("update")
+    public CommonResult update(@RequestBody TypeInfo typeInfo){
+        log.info("updateTypeInfo:{}",typeInfo);
+        typeService.updateTypeInfo(typeInfo);
+        return CommonResult.builder().code(200)
+                .message("success")
+                .build();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

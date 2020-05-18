@@ -31,6 +31,23 @@ public class PositionService {
 		grpcClient = UserPositionServiceGrpc.newBlockingStub(managedChannel);
 	}
 
+	public String startNameDisplay(MapPosition position){
+		try {
+			log.info("开始位置失败:{}",position);
+			UserPositionOuterClass.UserPosition.Builder builder=UserPositionOuterClass.UserPosition.newBuilder()
+					.setPositionX(position.getPositionX())
+					.setPositionY(position.getPositionY())
+					.setPositionZ(position.getPositionZ());
+			UserPositionOuterClass.StartNameDisplay startNameDisplay=grpcClient.startNameDisplay(builder.build());
+			return startNameDisplay.getDisplayName();
+		}catch (Exception e){
+			e.printStackTrace();
+			log.error("开始位置失败",e);
+			return "开始位置失败";
+		}
+	}
+
+
 	public List<MapPosition> findPosition(DeviceInfo... infos) {
 		try {
 			log.info("请求数据列表:{}",infos);
@@ -50,8 +67,11 @@ public class PositionService {
 
 
 
-	public List<MapPosition> findDirection(MapPosition startPosition,MapPosition endPosition){
 
+
+
+
+	public List<MapPosition> findDirection(MapPosition startPosition,MapPosition endPosition){
 
 		try {
 		UserPositionOuterClass.Direction.Builder builder = UserPositionOuterClass.Direction.newBuilder();

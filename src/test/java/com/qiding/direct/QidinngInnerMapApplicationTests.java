@@ -4,9 +4,11 @@ import com.qiding.direct.map.param.Geo;
 import com.qiding.direct.map.param.GeoLine;
 import com.qiding.direct.map.param.GeoPoint;
 import com.qiding.direct.map.param.GeoPolygon;
+import com.qiding.direct.map.service.GeoPropertiesService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.tomcat.util.security.MD5Encoder;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.DigestUtils;
 
@@ -16,6 +18,10 @@ import java.util.*;
 @Log4j2
 @SpringBootTest
 class QidinngInnerMapApplicationTests {
+
+	@Autowired
+	GeoPropertiesService propertiesService;
+
 
 	@Test
 	void contextLoads() {
@@ -45,6 +51,14 @@ class QidinngInnerMapApplicationTests {
 		System.out.println(map.putIfAbsent("aa","bb"));
 
 		System.out.println("aaa");
+	}
+
+	@Test
+	public void testAllFloorAndFileName(){
+	    log.info(propertiesService.findAllFloorAndFileName());
+		log.info(propertiesService.findAllFloorAndFileName("B2"));
+		log.info(propertiesService.findAllFloorAndFileName("B3"));
+		log.info(propertiesService.list("B2","zx",1,10));
 	}
 
 

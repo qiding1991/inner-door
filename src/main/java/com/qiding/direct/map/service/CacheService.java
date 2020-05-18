@@ -52,7 +52,9 @@ public class CacheService {
 
 
     public void cleanCache() {
-        referenceGeo.get().clear();
+        if(referenceGeo.get()!=null){
+            referenceGeo.get().clear();
+        }
     }
 
 

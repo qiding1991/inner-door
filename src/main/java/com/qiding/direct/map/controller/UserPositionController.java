@@ -219,6 +219,11 @@ public class UserPositionController {
         return CommonResult.builder().code(200).message("success").data(floorMap).build();
     }
 
-
+    @ApiOperation(value = "显示开始名称",httpMethod ="POST")
+    @PostMapping("startNameDisplay")
+    public CommonResult startNameDisplay(@RequestBody MapPosition position) {
+         String displayName=positionService.startNameDisplay(position);
+         return CommonResult.builder().code(200).message("success").data(displayName).build();
+    }
 }
 

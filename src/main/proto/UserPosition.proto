@@ -12,10 +12,15 @@ message UserPosition{
   string positionZ=3;
 }
 
-
 message DeviceInfoList{
   repeated DeviceInfo deviceInfo=1;
 }
+
+message StartNameDisplay{
+    string displayName=1;
+}
+
+
 
 message UserPositionList{
   repeated UserPosition position=1;

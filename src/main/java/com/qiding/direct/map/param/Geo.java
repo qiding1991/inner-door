@@ -17,6 +17,11 @@ public  abstract class Geo {
 
     public void changeProperties(GeoPropertiesService propertiesService){
          GeoProperties geoProperties= propertiesService.detail(properties.get("uuid"));
+         if(geoProperties==null||geoProperties.getProperties()==null){
+             log.error("uuid{}对应的属性不存在",properties);
+             return;
+         }
+
          geoProperties.getProperties().put("floor",geoProperties.getFloor());
          this.properties.putAll(geoProperties.getProperties());
     }

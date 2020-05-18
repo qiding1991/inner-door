@@ -28,9 +28,19 @@ public class TypeService {
 
 
     public  void delTypeInfo(String typeName){
-        Query query= Query.query(Criteria.where("typeName").is(typeName));
+          Query query= Query.query(Criteria.where("typeName").is(typeName));
           mongoTemplate.remove(query,TypeInfo.class);
     }
+
+    public void updateTypeInfo(TypeInfo typeInfo){
+        delTypeInfo(typeInfo.getTypeName());
+        addTypeInfo(typeInfo);
+    }
+
+
+
+
+
 
 
 
