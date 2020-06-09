@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 
 import java.lang.ref.SoftReference;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
@@ -23,7 +24,7 @@ public class CacheService {
     AtomicInteger currentVersion = new AtomicInteger(1);
 
 
-    SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new HashMap<>());
+    volatile SoftReference<Map<String, List<Geo>>> referenceGeo = new SoftReference<Map<String, List<Geo>>>(new ConcurrentHashMap<>());
 
 
     public String token(String username) {
@@ -52,8 +53,11 @@ public class CacheService {
 
 
     public void cleanCache() {
+        log.info(referenceGeo.get());
         if(referenceGeo.get()!=null){
             referenceGeo.get().clear();
+        }else{
+            referenceGeo = new SoftReference<>(new HashMap<>());
         }
     }
 
@@ -63,12 +67,16 @@ public class CacheService {
         String floor = floorResult.getFloor();
 
         log.info("updateDataCache param:infoList={},floorResult={}",infoList,floorResult);
-
+        //gc以后，重新设置值
+        synchronized (this){
+            if(referenceGeo==null||referenceGeo.get()==null){
+                referenceGeo = new SoftReference<>(new ConcurrentHashMap<>());
+            }
+        }
 
         infoList.stream().forEach(mapInfo -> {
             String cacheKey = mapInfo.getGeometry() + floor;
             log.info("referenceGeo, referenceGeo={},cacheData={}",referenceGeo,referenceGeo.get());
-
             referenceGeo.get().computeIfAbsent(cacheKey, (key) -> {
                 List<Geo> geoList = new ArrayList<>();
                 List<InnerMapInfo> mapInfoList = geoMapService.getMapData(mapInfo, floor);
